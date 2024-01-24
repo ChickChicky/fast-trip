@@ -11,6 +11,7 @@ This project was actually really suited for shaders, and it of course outpassed 
 * Run `npm install`
 * Run `node index.js`
 * Open *renderer.html*
+<br>
 You should now see the video play on the page and once it stops, it should have finished creating a video file in the same directory.
 
 You can try to edit the shader directly inside the .html file, but I'll try to make a bit more friendly interface for doing so in the future.
