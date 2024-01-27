@@ -189,13 +189,21 @@
                 gl.waitSync(sync, 0, -1);
             }
 
-            const FRAME_BUFFER_SIZE = 30;
-            const FRAME_COUNT = 600;
+            const FRAME_BUFFER_SIZE = 2;
+            const FRAME_COUNT = 3600;
             const FRAME_DT = 10/1000;
 
-            screenSize(500,500);
+            screenSize(2000,2000);
 
             const ws = new WebSocket('ws://localhost:4242');
+
+            const data = new Uint8Array(4+env.w*env.h*4);
+            const data_msg = new DataView(data.buffer);
+            data_msg.setUint8(0,'D'.charCodeAt());
+            data_msg.setUint8(1,'A'.charCodeAt());
+            data_msg.setUint8(2,'T'.charCodeAt());
+            data_msg.setUint8(3,'A'.charCodeAt());
+            const datav = data.subarray(4);
 
             ws.addEventListener('open',function(){
 
@@ -210,42 +218,20 @@
                     ws.send(init_msg);
                 }
 
-                ;(async()=>{    
-                    /** @type {Uint8Array[]} */
-                    let buff = [];
-                    let send_buffer = () => {
-                        if (buff.length) {
-                            {
-                                const data = new Uint8Array(4+buff.length*env.w*env.h*3);
-                                const data_msg = new DataView(data.buffer);
-                                data_msg.setUint8(0,'D'.charCodeAt());
-                                data_msg.setUint8(1,'A'.charCodeAt());
-                                data_msg.setUint8(2,'T'.charCodeAt());
-                                data_msg.setUint8(3,'A'.charCodeAt());
-                                for (const [i,b] of buff.map((b,i)=>[i,b])) {
-                                    data.set(b,4+i*env.w*env.h*3);
-                                }
-                                ws.send(data_msg);
-                            }
-                            buff = [];
-                        }
-                    }
-    
-                    const image = new Uint8Array(env.w*env.h*4);
+                ;(async()=>{
     
                     for (let f = 0; f < FRAME_COUNT; f++) {
-                        await new Promise(r=>setTimeout(r));
-                        if (f % FRAME_BUFFER_SIZE == 0) send_buffer();
+                        if (f % 6 == 0) await new Promise(r=>setTimeout(r));
                         
                         // Generate a new frame
                         frame( f * FRAME_DT );
     
                         // Save it
-                        gl.readPixels(0,0,env.w,env.h,gl.RGBA,gl.UNSIGNED_BYTE,image)
-                        buff.push(Array.from(image).filter((_,i)=>(i%4)!=3));
+                        gl.readPixels(0,0,env.w,env.h,gl.RGBA,gl.UNSIGNED_BYTE,datav)
+                        ws.send(data);
+
+                        while ( ws.bufferedAmount > data.length *FRAME_BUFFER_SIZE ) await new Promise(r=>setTimeout(r));
                     }
-    
-                    send_buffer();
 
                     { const init_msg = new DataView(new Uint8Array(4).buffer)
                         init_msg.setUint8(0,'E'.charCodeAt());

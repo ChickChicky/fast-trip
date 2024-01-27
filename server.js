@@ -23,9 +23,10 @@ const server = new ws.Server(
                         '-threads', '12',
                         '-s', `${width}x${height}`,
                         '-f', 'rawvideo',
-                        '-pix_fmt', 'rgb24',
+                        '-pix_fmt', 'rgba',
                         '-i', '-',
                         '-video_size', `${width}x${height}`,
+                        ...process.argv.slice(2),
                         `${Date.now().toString(36)}.mp4`
                     ],{
                         stdio: 'pipe'
@@ -40,6 +41,7 @@ const server = new ws.Server(
                 }
             }
         });
+        sock.on('error',console.error);
     }
 ).on(
     'error',
